@@ -12,3 +12,8 @@ REASONS = {
 }
 
 REASONS.update({'CUT_FORMAT': '切件规格无效', 'CUT_LIMIT': '切件超限', 'CUT_SIZE': '切件超长或为空', 'CUT_REMAINDER': '余料长度异常', 'CUT_KERF': '锯缝不足', 'DATE': '日期格式无效', 'REV_BLOCKED': '较新来源尚未采信'})
+
+REASONS.update({'TAIL_UNKNOWN': '没有此料尾', 'TAIL_CONFLICT': '料尾编号已登记且内容不一致',
+                'TAIL_STATE': '料尾当前状态不允许此操作', 'TAIL_FOREIGN': '料尾归属其他签批批次',
+                'CLAIM_CONFLICT': '领料单号已用于其他领用', 'LOAN_UNKNOWN': '没有此借出单',
+                'LOAN_STATE': '借出单与料尾状态不一致'})

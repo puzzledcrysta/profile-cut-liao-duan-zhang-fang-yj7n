@@ -15,6 +15,7 @@
 | M5 领料核对 | 核对独立清单和各类差异 | `POST /api/reconcile` | `app/modules/reconcile/service.py` | `tests/test_reconcile.py` |
 | M6 锯切批次 | 打开历史批次并对原文件复跑 | `POST /api/runs` | `app/modules/runs/service.py` | `tests/test_runs.py` |
 | M7 班组复核 | 登记复核结论并下载证据 | `POST /api/review/{run_id}` | `app/modules/review/decisions.py` | `tests/test_review.py` |
+| M8 料尾台账 | 登记退料，决定预占原批或借给急单，领用与归还留痕 | `POST /api/tails` `POST /api/claims` | `app/modules/tails/service.py` | `tests/test_tails.py` |
 
 ## 陷阱登记
 
@@ -33,6 +34,9 @@
 | TRAP-17 | 旧版列名映射 | legacy.csv | `app/modules/contract/schema.py` | `tests/test_contract.py::test_legacy_aliased` |
 | TRAP-18 | 空文件、空白文件与仅表头 | 测试构造 | `app/modules/intake/service.py` | `tests/test_intake.py::test_empty_states` |
 | TRAP-26 | 陈旧复核版本拒绝 | 测试构造 | `app/modules/review/decisions.py` | `tests/test_review.py::test_stale` |
+| TRAP-33 | 两班组并发领同一料尾只扣减一次 | 测试构造 | `app/modules/tails/service.py` | `tests/test_tails.py::test_concurrent_claims_single_winner` |
+| TRAP-34 | 同一领料单号重试不新增扣减 | 测试构造 | `app/modules/tails/service.py` | `tests/test_tails.py::test_claim_retry_never_doubles` |
+| TRAP-35 | 归还只恢复一次，过期归还不关新借出单 | 测试构造 | `app/modules/tails/service.py` | `tests/test_tails.py::test_stale_return_cannot_close_new_loan` |
 | TRAP-105 | kerf blocks | cases.csv | `app/modules/domain/rule.py` | `tests/test_domain.py::test_kerf_blocks` |
 | TRAP-19 | best fit | cases.csv | `app/modules/domain/rule.py` | `tests/test_domain.py::test_best_fit` |
 

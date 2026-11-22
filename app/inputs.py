@@ -50,6 +50,22 @@ class Review(BaseModel):
     note: str = Field(default='',max_length=500)
 
 
+class TailIn(BaseModel):
+    tail: str = Field(min_length=1,max_length=40)
+    length: int = Field(gt=0,le=100000)
+    home: str = Field(min_length=1,max_length=40)
+
+
+class LendIn(BaseModel):
+    borrower: str = Field(min_length=1,max_length=40)
+
+
+class ClaimIn(BaseModel):
+    request: str = Field(min_length=1,max_length=64)
+    tail: str = Field(min_length=1,max_length=40)
+    batch: str = Field(min_length=1,max_length=40)
+
+
 def read_sample(name):
     choices = {'shift':'shift.csv','external':'external.csv'}
     if name not in choices:

@@ -62,7 +62,15 @@
     td li { max-width: 24ch; overflow-wrap: anywhere; }
     .state { display: inline-block; color: var(--ok); font-size: 12px; white-space: nowrap; }
     .state.problem { color: var(--bad); }
+    .state.hold { color: var(--accent); }
     .state { border: 1px solid currentColor; padding: 3px 6px; font-family: var(--font-mono); }
+    .tails { display: grid; gap: 10px; padding: var(--pad); }
+    .tails h3 { margin: 4px 0 0; font-size: 12px; letter-spacing: .1em; color: var(--muted); }
+    .tails .ledger-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; padding-bottom: 8px; border-bottom: 1px dashed var(--line-strong); }
+    .tails .ledger-form label { display: grid; gap: 2px; font-size: 12px; color: var(--muted); }
+    .tails .ledger-form input { width: 13ch; }
+    .tails td .actions { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    .tails td .actions input { width: 11ch; padding: 2px 5px; font-size: 12px; }
     .empty { margin: var(--pad); color: var(--muted); }
     #signal { max-height: 414px; overflow: auto; }
     .signal dl, .signal ol { padding: 0; margin: 0; }

@@ -13,6 +13,22 @@ CREATE TABLE IF NOT EXISTS reviews (
   decision TEXT NOT NULL, note TEXT NOT NULL, changed TEXT NOT NULL,
   PRIMARY KEY(run_id,version)
 );
+CREATE TABLE IF NOT EXISTS tails (
+  id TEXT PRIMARY KEY, length INTEGER NOT NULL CHECK (length > 0),
+  home TEXT NOT NULL,
+  state TEXT NOT NULL CHECK (state IN ('在库','预占','借出','已领用')),
+  holder TEXT, loan INTEGER, seq INTEGER NOT NULL, updated TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS loans (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tail TEXT NOT NULL REFERENCES tails(id), borrower TEXT NOT NULL,
+  lent TEXT NOT NULL, returned TEXT
+);
+CREATE TABLE IF NOT EXISTS claims (
+  request TEXT PRIMARY KEY,
+  tail TEXT NOT NULL REFERENCES tails(id), batch TEXT NOT NULL,
+  length INTEGER NOT NULL, created TEXT NOT NULL
+);
 """
 
 

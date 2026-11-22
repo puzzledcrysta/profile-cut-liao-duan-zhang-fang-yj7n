@@ -88,6 +88,114 @@ function setRun(report) {
   live.textContent = `批次 ${id.slice(0, 9)} · ${result.balanced ? '记录已对齐' : '记录数不符'}`;
 }
 
+const TAIL_STATES = {'在库': ['在库可领', 'state'], '预占': ['预占留批', 'state hold'],
+                     '借出': ['借出未还', 'state problem'], '已领用': ['已领用', '']};
+
+function tailActions(row) {
+  const wrap = el('div', undefined, 'actions');
+  const run = async (button, task) => {
+    button.disabled = true;
+    try { notice(await task()); await render(); }
+    catch (error) { notice(error.message, true); }
+    finally { button.disabled = false; }
+  };
+  const button = (label, task) => {
+    const control = el('button', label, 'btn');
+    control.type = 'button';
+    control.addEventListener('click', () => run(control, task));
+    return control;
+  };
+  const field = (placeholder, value = '') => {
+    const input = el('input');
+    input.placeholder = placeholder;
+    input.value = value;
+    input.maxLength = 64;
+    return input;
+  };
+  if (row.state === '在库' || row.state === '预占') {
+    const claimId = field('领料单号', `L-${row.id}`);
+    wrap.append(claimId, button('领用', async () => {
+      const request = claimId.value.trim();
+      if (!request) throw Error('填写领料单号');
+      const outcome = await query('/api/claims', {request, tail: row.id, batch: row.home});
+      return outcome.deduplicated ? `领料单 ${request} 已入账，未重复扣减`
+                                  : `已领用 ${row.id}，扣减 ${outcome.claim.length} 毫米`;
+    }));
+  }
+  if (row.state === '在库') {
+    const borrower = field('急单号');
+    wrap.append(button('预占', async () => { await query(`/api/tails/${row.id}/reserve`, {}); return `已预占留给 ${row.home}`; }),
+                borrower, button('借出', async () => {
+      const who = borrower.value.trim();
+      if (!who) throw Error('填写急单号');
+      await query(`/api/tails/${row.id}/lend`, {borrower: who});
+      return `已借给 ${who}`;
+    }));
+  } else if (row.state === '预占') {
+    wrap.append(button('取消预占', async () => { await query(`/api/tails/${row.id}/unreserve`, {}); return '已取消预占，回到在库'; }));
+  } else if (row.state === '借出') {
+    wrap.append(button('归还', async () => {
+      const outcome = await query(`/api/loans/${row.loan}/return`, {});
+      return outcome.restored ? '已归还回库，恢复原批可领' : '该借出单已归还过，未重复恢复';
+    }));
+  }
+  return wrap;
+}
+
+function paintTails(view) {
+  const root = el('div', undefined, 'tails');
+  const form = el('form', undefined, 'ledger-form');
+  const inputs = {};
+  for (const [name, label] of [['tail', '料尾编号'], ['length', '长度毫米'], ['home', '原签批批次']]) {
+    const input = el('input');
+    input.required = true;
+    input.maxLength = 40;
+    const item = el('label');
+    item.append(label, input);
+    inputs[name] = input;
+    form.append(item);
+  }
+  const submit = el('button', '登记退料', 'btn btn--primary');
+  submit.type = 'submit';
+  form.append(submit);
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const length = Number(inputs.length.value);
+    if (!Number.isInteger(length) || length <= 0) { notice('长度须为正整数毫米', true); return; }
+    submit.disabled = true;
+    try {
+      const outcome = await query('/api/tails', {tail: inputs.tail.value.trim(), length, home: inputs.home.value.trim()});
+      notice(outcome.deduplicated ? `料尾 ${outcome.id} 已登记过，未重复入账` : `料尾 ${outcome.id} 已登记在库`);
+      form.reset();
+      await render();
+    } catch (error) { notice(error.message, true); }
+    finally { submit.disabled = false; }
+  });
+  const batches = el('div');
+  table(batches, [['原签批批次', 'batch'], [`还能领 · ${settings.unit}`, 'claimable', 'num'], ['可领截数', 'pieces', 'num'],
+                  ['其中预占', 'reserved', 'num'], ['在库未占', 'on_hand', 'num'],
+                  ['借出未还', 'lent', 'num'], ['已领用', 'claimed', 'num']], view.batches);
+  const list = el('div');
+  table(list, [['料尾', 'id'], [`长度 · ${settings.unit}`, 'length', 'num'], ['原批次', 'home'],
+               ['状态', row => { const [label, tone] = TAIL_STATES[row.state]; return el('span', label, tone || undefined); }],
+               ['持有 / 归还去向', row => {
+                 const cell = el('div');
+                 const where = {'在库': '库房在库', '预占': `留给 ${row.holder}`, '借出': `借给 ${row.holder}`, '已领用': `${row.holder} 已领`};
+                 cell.append(el('span', where[row.state]));
+                 if (row.loans.length) {
+                   cell.append(evidence('借还去向', row.loans.map(loan =>
+                     `借出单#${loan.id} → ${loan.borrower} · ${loan.lent.slice(0, 10)} 借` +
+                     (loan.returned ? ` · ${loan.returned.slice(0, 10)} 还回在库` : ' · 未还'))));
+                 }
+                 return cell;
+               }],
+               ['更新 UTC', row => row.updated.slice(0, 19).replace('T', ' '), 'num'],
+               ['操作', tailActions]], view.tails);
+  root.append(form, el('h3', '原签批批次可领汇总'), batches, el('h3', '料尾明细'), list);
+  body.replaceChildren(root);
+  live.textContent = `料尾台账 · ${view.tails.length} 截登记`;
+}
+
 async function render() {
   const ticket = ++renderEpoch;
   const stage = selected;
@@ -96,6 +204,16 @@ async function render() {
   for (const link of links) {
     if (link.dataset.module === stage) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
+  }
+  if (stage === 'tails') {
+    byId('tools').hidden = true;
+    try {
+      const view = await query('/api/tails');
+      if (ticket === renderEpoch) paintTails(view);
+    } catch (error) {
+      if (ticket === renderEpoch) notice(error.message, true);
+    }
+    return;
   }
   if (!result) return;
   const id = result.manifest.run_id;

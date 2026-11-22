@@ -12,4 +12,4 @@ ROLE = '门窗加工车间备料员'
 UNIT = '毫米'
 RULE_VERSION = 'profile-cut-1.0'
 SIGNATURE = '料段去向'
-TABS = {'intake': '备料凭证', 'contract': '型材规格', 'quality': '异常计划', 'domain': '型材排料', 'reconcile': '领料核对', 'runs': '锯切批次', 'review': '班组复核'}
+TABS = {'intake': '备料凭证', 'contract': '型材规格', 'quality': '异常计划', 'domain': '型材排料', 'tails': '料尾台账', 'reconcile': '领料核对', 'runs': '锯切批次', 'review': '班组复核'}
